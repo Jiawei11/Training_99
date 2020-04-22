@@ -1,0 +1,22 @@
+#cvs {
+    width: 100vh;
+    height: 100vh;
+    border: 1px solid black;
+}
+
+#menu {
+    display: none;
+    text-align: center;
+}
+
+#game {
+    display: none;
+}
+
+button{
+    width: 80%;
+    height: 60px;
+    border:1px solid #ddd;
+    border-radius: 5px;
+    font-size: 50px;
+}

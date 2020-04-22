@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        #cvs {
+            width: 600px;
+            height: 450px;
+            border: 1px solid black;
+        }
+
+        #menu {
+            display: none;
+        }
+
+        #game {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading">Loading</div>
+
+    <div id="menu">
+        <button onclick="startGame();">Start</button>
+    </div>
+
+    <div id="game">
+        <canvas id="cvs"></canvas>
+    </div>
+
+    <script>
+        let game = {
+            ctx: null,
+            audio: null,
+            res: {
+                total: 4,
+                loaded: 0,
+                sounds: {
+                    bullet: 'bullet.mp3',
+                    explosion: 'explosion.mp3'
+                },
+                images: {
+                    plane: 'plane.png',
+                    explosion: 'explosion.png'
+                }
+            }
+        }
+
+        function initialzie() {
+            game.ctx = document.querySelector('#cvs').getContext('2d');
+            game.audio = new AudioContext();
+            loadResource();
+        }
+
+        function loadResource() {
+            loadImages();
+            loadSounds();
+        }
+
+        function loadImages() {
+            for (let name in game.res.images) {
+                loadImage(name, game.res.images[name]);
+            }
+        }
+
+        function loadImage(name, src) {
+            let img = new Image();
+            img.src = src;
+
+            img.addEventListener('load', function () {
+                game.res.images[name] = img;
+                resourceLoaded();
+            });
+        }
+
+        function loadSounds() {
+            for (let name in game.res.sounds) {
+                loadSound(name, game.res.sounds[name]);
+            }
+        }
+
+        function loadSound(name, src) {
+            fetch(game.res.sounds[name])
+                .then(function (res) {
+                    return res.arrayBuffer();
+                })
+                .then(function (res) {
+                    game.res.sounds[name] = game.audio.decodeAudioData(res);
+                    resourceLoaded();
+                })
+        }
+
+        function loadMenu() {
+            document.querySelector('#loading').style.display = 'none';
+            document.querySelector('#game').style.display = 'none';
+            document.querySelector('#menu').style.display = 'block';
+        }
+
+        function resourceLoaded() {
+            game.res.loaded++;
+
+            let percentage = 100 * game.res.loaded / game.res.total;
+            let loading = document.querySelector('#loading');
+
+            loading.innerText = percentage;
+
+            if (game.res.total == game.res.loaded) {
+                loadMenu();
+            }
+        }
+
+        function startGame() {
+
+        }
+
+        initialzie();
+    </script>
+</body>
+
+</html>

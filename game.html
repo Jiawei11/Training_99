@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./main.css">
+</head>
+
+<body>
+    <div id="loading">Loading</div>
+
+    <div id="menu">
+        <button onclick="startGame();">Start</button>
+    </div>
+
+    <div id="game">
+        <canvas id="cvs"></canvas>
+    </div>
+
+    <script src="./lib.js"></script>
+    <script>
+        function initialzie() {
+            game.ctx = document.querySelector('#cvs').getContext('2d');
+            game.audio = new AudioContext();
+            loadResource();
+        }
+
+        function loadResource() {
+            loadImages();
+            loadSounds();
+        }
+
+        function loadImages() {
+            for (let name in game.res.images) {
+                loadImage(name, game.res.images[name]);
+            }
+        }
+
+        function loadImage(name, src) {
+            let img = new Image();
+            img.src = src;
+
+            img.addEventListener('load', function () {
+                game.res.images[name] = img;
+                resourceLoaded();
+            });
+        }
+
+        function loadSounds() {
+            for (let name in game.res.sounds) {
+                loadSound(name, game.res.sounds[name]);
+            }
+        }
+
+        function loadSound(name, src) {
+            fetch(game.res.sounds[name])
+                .then(function (res) {
+                    return res.arrayBuffer();
+                })
+                .then(function (res) {
+                    game.res.sounds[name] = game.audio.decodeAudioData(res);
+                    resourceLoaded();
+                })
+        }
+
+        function loadMenu() {
+            document.querySelector('#loading').style.display = 'none';
+            document.querySelector('#game').style.display = 'none';
+            document.querySelector('#menu').style.display = 'block';
+        }
+
+        function resourceLoaded() {
+            game.res.loaded++;
+
+            let percentage = 100 * game.res.loaded / game.res.total;
+            let loading = document.querySelector('#loading');
+
+            loading.innerText = percentage;
+
+            if (game.res.total == game.res.loaded) {
+                loadMenu();
+            }
+        }
+
+        function startGame() {
+            document.querySelector('#game').style.display = 'block';
+            document.querySelector('#menu').style.display = 'none';
+
+            game.data.plane = new game.lib.Plane();
+            game.data.bulletSystem = new game.lib.BulletSystem();
+            game.data.cirlce = 0;
+            game.data.recordKeys = {
+                left: false,
+                top: false,
+                right: false,
+                bottom: false,
+                space: false
+            };
+            game.data.particles = [game.data.plane,game.data.bulletSystem];
+
+            document.addEventListener('keydown', keydown);
+
+            document.addEventListener('keyup', keyup);
+
+            game.data.id = setInterval(refreshGame, 10);
+        }
+
+        function keydown(e){
+            switch (e.keyCode) {
+                case 37:
+                    game.data.recordKeys.left = true;
+                    break;
+                case 39:
+                    game.data.recordKeys.right = true;
+                    break;
+                case 38:
+                    game.data.recordKeys.top = true;
+                    break;
+                case 40:
+                    game.data.recordKeys.bottom = true;
+                    break;
+                case 32:
+                    game.data.recordKeys.space = true;
+                    break;
+            }
+        }
+
+        function keyup(e){
+            switch (e.keyCode) {
+                case 37:
+                    game.data.recordKeys.left = false;
+                    break;
+                case 39:
+                    game.data.recordKeys.right = false;
+                    break;
+                case 38:
+                    game.data.recordKeys.top = false;
+                    break;
+                case 40:
+                    game.data.recordKeys.bottom = false;
+                    break;
+                case 32:
+                    game.data.recordKeys.space = false;
+                    break;
+            }
+        }
+
+        function refreshGame() {           
+            let particles = game.data.particles;
+
+            for (let i = 0; i < particles.length; i++) {
+                let die = particles[i].update();
+
+                if (die) {
+                    particles.splice(i, 1);
+                    i--;
+                }
+            }
+
+            game.ctx.fillRect(0, 0, game.ctx.canvas.width, game.ctx.canvas.height);
+
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].render();
+            }
+
+            game.data.circle++;
+
+            if(isExplosion()){
+                gameOver();
+            };
+        }
+
+        function isExplosion(){
+            let bullets = game.data.bulletSystem.bullet;
+            let plane = game.data.plane;
+
+            for(let i = 0;i < bullets.length;i++){
+                let threshold = bullets[i].size + (plane.size / 2);
+                let distance = Math.sqrt(
+                    Math.pow(plane.x - bullets[i].x,2) +
+                    Math.pow(plane.y - bullets[i].y,2)
+                );
+
+                if(distance <= threshold){
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function gameOver(){
+            let plane = game.data.plane;
+
+            game.ctx.drawImage(game.res.images.explosion,plane.x-30,plane.y-30,50,50)
+            
+
+            clearInterval(game.data.id);
+
+            game.ctx.canvas.addEventListener('click',startGame)
+
+            document.removeEventListener('keydown',keydown);
+            document.removeEventListener('keyup',keyup);            
+        }
+
+        initialzie();
+    </script>
+</body>
+
+</html>
